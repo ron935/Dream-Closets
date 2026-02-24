@@ -8,7 +8,16 @@ error_reporting(0);
 ini_set('display_errors', 0);
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: https://www.dreamclosets.com');
+
+$allowedOrigins = [
+    'http://localhost:8888',
+    'https://skyblue-porpoise-169119.hostingersite.com'
+];
+$origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+if (in_array($origin, $allowedOrigins)) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+}
+
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
@@ -23,7 +32,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-$smtpConfig = require __DIR__ . '/config.php';
+// Config path: same dir on MAMP, one level up on Hostinger
+$configPath = __DIR__ . '/config.php';
+if (!file_exists($configPath)) {
+    $configPath = __DIR__ . '/../config.php';
+}
+$smtpConfig = require $configPath;
+
+// Sanitize config values (Hostinger file editor can inject invisible chars)
+array_walk($smtpConfig, function(&$val) {
+    if (is_string($val)) $val = preg_replace('/[^\x20-\x7E]/', '', $val);
+});
 
 // Get form data
 $firstName = isset($_POST['firstName']) ? htmlspecialchars(trim($_POST['firstName']), ENT_QUOTES, 'UTF-8') : '';
