@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Gallery | Dream Closets | Custom Closets & Home Organization</title>
+    <meta name="description" content="Browse our gallery of custom closet designs, pantry renovations, garage makeovers, and home organization projects throughout the Atlanta area.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <header class="header" id="header">
+        <div class="container">
+            <nav class="nav">
+                <a href="index.html" class="logo">Dream<span>Closets</span></a>
+                <ul class="nav-menu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="services.html">Services</a></li>
+                    <li><a href="works.html" class="active">Gallery</a></li>
+                    <li><a href="pricing.html">Pricing</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+                <div class="nav-cta"><a href="contact.html" class="btn btn-primary">Free Consultation</a></div>
+                <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+
+    <section class="page-header">
+        <div class="container">
+            <h1>Our Gallery</h1>
+            <p>Browse our portfolio of custom closet designs and home organization projects completed for homeowners throughout Atlanta.</p>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div class="gallery-filter">
+                <button class="filter-btn active" data-filter="all">All Projects</button>
+                <button class="filter-btn" data-filter="walk-in">Walk-In Closets</button>
+                <button class="filter-btn" data-filter="reach-in">Reach-In Closets</button>
+                <button class="filter-btn" data-filter="pantry">Pantry</button>
+                <button class="filter-btn" data-filter="garage">Garage</button>
+                <button class="filter-btn" data-filter="other">Other</button>
+            </div>
+
+            <div class="gallery-grid">
+                <!-- Walk-In Closets -->
+                <div class="gallery-item" data-category="walk-in">
+                    <img src="https://images.unsplash.com/photo-1630699293155-2cc65a890604?w=600&h=450&fit=crop" alt="Luxury master walk-in closet with custom shoe shelving" loading="lazy">
+                    <div class="gallery-overlay">
+                        <h3>Luxury Master Walk-In</h3>
+                        <span>Walk-In Closet</span>
+                    </div>
+                </div>
+                <div class="gallery-item" data-category="walk-in">
+                    <img src="https://images.unsplash.com/photo-1629078691371-2c83d139c986?w=600&h=450&fit=crop" alt="His and hers walk-in closet with mirror and white shelving" loading="lazy">
+                    <div class="gallery-overlay">
+                        <h3>His & Hers Walk-In</h3>
+                        <span>Walk-In Closet</span>
+                    </div>
+                </div>
+                <div class="gallery-item" data-category="walk-in">
+                    <img src="https://images.unsplash.com/photo-1618236444721-4a8dba415c15?w=600&h=450&fit=crop" alt="Boutique-style closet with organized accessories and display shelves" loading="lazy">
+                    <div class="gallery-overlay">
+                        <h3>Boutique-Style Closet</h3>
+                        <span>Walk-In Closet</span>
+                    </div>
+                </div>
+
+                <!-- Reach-In Closets -->
+                <div class="gallery-item" data-category="reach-in">
+                    <img src="https://images.unsplash.com/photo-1577020914435-7ae6b1091ebd?w=600&h=450&fit=crop" alt="Kids room reach-in closet with neatly folded and hanging clothes" loading="lazy">
+                    <div class="gallery-overlay">
+                        <h3>Kids Room Reach-In</h3>
+                        <span>Reach-In Closet</span>
+                    </div>
+                </div>
+                <div class="gallery-item" data-category="reach-in">
+                    <img src="https://images.unsplash.com/photo-1567113463300-102a7eb3cb26?w=600&h=450&fit=crop" alt="Guest room reach-in closet with color-organized apparel" loading="lazy">
+                    <div class="gallery-overlay">
+                        <h3>Guest Room Reach-In</h3>
+                        <span>Reach-In Closet</span>
+                    </div>
+                </div>
+
+                <!-- Pantry -->
+                <div class="gallery-item" data-category="pantry">
+                    <img src="https://images.unsplash.com/photo-1669384537114-146673bd410b?w=600&h=450&fit=crop" alt="Custom pantry renovation with organized glass jars on shelves" loading="lazy">
+                    <div class="gallery-overlay">
+                        <h3>Custom Pantry Renovation</h3>
+                        <span>Pantry Organization</span>
+                    </div>
+                </div>
+                <div class="gallery-item" data-category="pantry">
+                    <img src="https://images.unsplash.com/photo-1617510711388-6f88e078d698?w=600&h=450&fit=crop" alt="Butler's pantry with clear glass jars on white shelving" loading="lazy">
+                    <div class="gallery-overlay">
+                        <h3>Butler's Pantry</h3>
+                        <span>Pantry Organization</span>
+                    </div>
+                </div>
+
+                <!-- Garage -->
+                <div class="gallery-item" data-category="garage">
+                    <img src="https://images.unsplash.com/photo-1486006920555-c77dcf18193c?w=600&h=450&fit=crop" alt="Complete garage makeover with wall-mounted tool organization" loading="lazy">
+                    <div class="gallery-overlay">
+                        <h3>Complete Garage Makeover</h3>
+                        <span>Garage Storage</span>
+                    </div>
+                </div>
+                <div class="gallery-item" data-category="garage">
+                    <img src="https://images.unsplash.com/photo-1760310936486-4dd450aab2a8?w=600&h=450&fit=crop" alt="Workshop and storage area with organized tools and workbench" loading="lazy">
+                    <div class="gallery-overlay">
+                        <h3>Workshop & Storage</h3>
+                        <span>Garage Storage</span>
+                    </div>
+                </div>
+
+                <!-- Other -->
+                <div class="gallery-item" data-category="other">
+                    <img src="https://images.unsplash.com/photo-1593062096033-9a26b09da705?w=600&h=450&fit=crop" alt="Home office with built-in desk and organized shelving" loading="lazy">
+                    <div class="gallery-overlay">
+                        <h3>Home Office with Murphy Bed</h3>
+                        <span>Multi-Functional Space</span>
+                    </div>
+                </div>
+                <div class="gallery-item" data-category="other">
+                    <img src="https://images.unsplash.com/photo-1682888818612-1c18ebecf3ec?w=600&h=450&fit=crop" alt="Luxury laundry room with washer, dryer, and custom cabinetry" loading="lazy">
+                    <div class="gallery-overlay">
+                        <h3>Luxury Laundry Room</h3>
+                        <span>Laundry Room</span>
+                    </div>
+                </div>
+                <div class="gallery-item" data-category="other">
+                    <img src="https://images.unsplash.com/photo-1722604532227-4b76797218aa?w=600&h=450&fit=crop" alt="Custom built-in entertainment center and closet organization" loading="lazy">
+                    <div class="gallery-overlay">
+                        <h3>Entertainment Center</h3>
+                        <span>Custom Built-In</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Love What You See?</h2>
+                <p>Let's create something beautiful for your home. Schedule your free in-home design consultation today and see your space transformed.</p>
+                <div class="cta-buttons">
+                    <a href="contact.html" class="btn btn-white btn-lg">Get a Free Consultation</a>
+                    <a href="tel:+17705551234" class="btn btn-outline-white btn-lg">Call (770) 555-1234</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-about">
+                    <a href="index.html" class="footer-logo">
+                        <span class="logo-icon"><i class="fas fa-door-open"></i></span>
+                        <span class="logo-text">Dream Closets</span>
+                    </a>
+                    <p class="footer-description">Custom closet design, installation, and home organization solutions that help homeowners maximize their space and simplify their lives.</p>
+                    <div class="footer-social">
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="Pinterest"><i class="fab fa-pinterest-p"></i></a>
+                        <a href="#" aria-label="Houzz"><i class="fab fa-houzz"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="services.html">Services</a></li>
+                        <li><a href="works.html">Gallery</a></li>
+                        <li><a href="pricing.html">Pricing</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Services</h4>
+                    <ul class="footer-links">
+                        <li><a href="services.html">Walk-In Closets</a></li>
+                        <li><a href="services.html">Reach-In Closets</a></li>
+                        <li><a href="services.html">Pantry & Kitchen</a></li>
+                        <li><a href="services.html">Garage Organization</a></li>
+                        <li><a href="services.html">Murphy Beds</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact Info</h4>
+                    <ul class="footer-contact">
+                        <li><i class="fas fa-map-marker-alt"></i><span>Atlanta, GA</span></li>
+                        <li><i class="fas fa-phone-alt"></i><a href="tel:+17705551234">(770) 555-1234</a></li>
+                        <li><i class="fas fa-envelope"></i><a href="mailto:info@dreamclosets.com">info@dreamclosets.com</a></li>
+                        <li><i class="fas fa-clock"></i><span>Mon - Fri: 8AM - 6PM<br>Sat: 9AM - 3PM</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Dream Closets. All Rights Reserved. | Powered by <a href="https://ipwebsolutions.com" target="_blank" rel="noopener" class="powered-by">IP Web Solutions</a></p>
+                <div class="footer-bottom-links">
+                    <a href="privacy.html">Privacy Policy</a>
+                    <a href="terms.html">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" aria-label="Back to top"><i class="fas fa-chevron-up"></i></button>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Gallery Filter
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const galleryItems = document.querySelectorAll('.gallery-item');
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const filter = this.dataset.filter;
+
+                    galleryItems.forEach(item => {
+                        if (filter === 'all' || item.dataset.category === filter) {
+                            item.style.display = '';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
