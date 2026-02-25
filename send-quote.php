@@ -182,10 +182,15 @@ $sent = $mailer->send(
 );
 
 // --- Save quote to Supabase (best-effort, don't block on failure) ---
+$supabaseDebug = [];
 $supabasePath = __DIR__ . '/supabase-config.php';
+$supabaseDebug['path1'] = $supabasePath;
+$supabaseDebug['path1_exists'] = file_exists($supabasePath);
 if (!file_exists($supabasePath)) {
     $supabasePath = __DIR__ . '/../supabase-config.php';
 }
+$supabaseDebug['path_used'] = $supabasePath;
+$supabaseDebug['path_used_exists'] = file_exists($supabasePath);
 if (file_exists($supabasePath)) {
     $supabaseConfig = require $supabasePath;
     array_walk($supabaseConfig, function(&$val) {
@@ -223,6 +228,9 @@ if (file_exists($supabasePath)) {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
         curl_close($ch);
+        $supabaseDebug['http_code'] = $httpCode;
+        $supabaseDebug['response'] = $response;
+        $supabaseDebug['curl_error'] = $curlError;
         if ($httpCode !== 201) {
             error_log("[Dream Closets] Supabase insert HTTP {$httpCode}: {$response} {$curlError}", 3, __DIR__ . '/quote-requests.log');
         }
@@ -575,7 +583,8 @@ Custom closets designed for your lifestyle.
 
     echo json_encode([
         'success' => true,
-        'message' => 'Thank you! Your consultation request has been sent. We will contact you within 24 hours. A confirmation has been sent to your email.'
+        'message' => 'Thank you! Your consultation request has been sent. We will contact you within 24 hours. A confirmation has been sent to your email.',
+        '_debug_supabase' => $supabaseDebug ?? 'no supabase block reached'
     ]);
 } else {
     http_response_code(500);
