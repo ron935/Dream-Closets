@@ -197,6 +197,9 @@ if (file_exists($supabasePath)) {
         if (is_string($val)) $val = preg_replace('/[^\x20-\x7E]/', '', $val);
     });
 
+    $supabaseDebug['key_length'] = strlen($supabaseConfig['service_role_key']);
+    $supabaseDebug['key_start'] = substr($supabaseConfig['service_role_key'], 0, 20);
+    $supabaseDebug['key_end'] = substr($supabaseConfig['service_role_key'], -20);
     $dreamClosetsBusinessId = '09ae0180-0532-4a0f-ac78-53ad526b97a1';
 
     try {
