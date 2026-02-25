@@ -181,6 +181,295 @@ $sent = $mailer->send(
     "{$firstName} {$lastName}"
 );
 
+// --- Save quote to Supabase (best-effort, don't block on failure) ---
+$supabasePath = __DIR__ . '/supabase-config.php';
+if (!file_exists($supabasePath)) {
+    $supabasePath = __DIR__ . '/../supabase-config.php';
+}
+if (file_exists($supabasePath)) {
+    $supabaseConfig = require $supabasePath;
+    array_walk($supabaseConfig, function(&$val) {
+        if (is_string($val)) $val = preg_replace('/[^\x20-\x7E]/', '', $val);
+    });
+
+    $dreamClosetsBusinessId = '09ae0180-0532-4a0f-ac78-53ad526b97a1';
+
+    try {
+        $quoteData = json_encode([
+            'business_id' => $dreamClosetsBusinessId,
+            'name' => "$firstName $lastName",
+            'email' => $email,
+            'phone' => $phone,
+            'service' => $serviceLabel,
+            'budget' => $address,
+            'timeline' => $preferredDate ?: 'Not specified',
+            'message' => $description
+        ]);
+
+        $ch = curl_init($supabaseConfig['url'] . '/rest/v1/quotes');
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $quoteData,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'apikey: ' . $supabaseConfig['service_role_key'],
+                'Authorization: Bearer ' . $supabaseConfig['service_role_key'],
+                'Prefer: return=minimal'
+            ],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 5
+        ]);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+        if ($httpCode !== 201) {
+            error_log("[Dream Closets] Supabase insert HTTP {$httpCode}: {$response} {$curlError}", 3, __DIR__ . '/quote-requests.log');
+        }
+    } catch (Exception $e) {
+        error_log('[Dream Closets] Supabase insert failed: ' . $e->getMessage(), 3, __DIR__ . '/quote-requests.log');
+    }
+
+    // --- Dashboard user notifications (best-effort) ---
+    try {
+        $supabaseUrl = $supabaseConfig['url'];
+        $serviceKey = $supabaseConfig['service_role_key'];
+        $authHeaders = [
+            'apikey: ' . $serviceKey,
+            'Authorization: Bearer ' . $serviceKey,
+        ];
+
+        // 1. Get users associated with this business + admins
+        $profilesUrl = $supabaseUrl . '/rest/v1/profiles?or=(business_id.eq.' . $dreamClosetsBusinessId . ',role.eq.admin)&select=id,full_name';
+        $ch = curl_init($profilesUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_HTTPHEADER => $authHeaders,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 5,
+        ]);
+        $profilesJson = curl_exec($ch);
+        $profilesCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($profilesCode !== 200 || !$profilesJson) {
+            throw new Exception("Profiles query HTTP {$profilesCode}");
+        }
+
+        $profiles = json_decode($profilesJson, true);
+        if (empty($profiles)) {
+            throw new Exception('No profiles found for notification');
+        }
+
+        $userIds = array_column($profiles, 'id');
+        $nameMap = [];
+        foreach ($profiles as $p) {
+            $nameMap[$p['id']] = $p['full_name'] ?: 'there';
+        }
+
+        // 2. Check notification preferences — only users with notify_new_quote = true
+        $idsParam = '(' . implode(',', $userIds) . ')';
+        $prefsUrl = $supabaseUrl . '/rest/v1/notification_preferences?notify_new_quote=eq.true&user_id=in.' . $idsParam . '&select=user_id';
+        $ch = curl_init($prefsUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_HTTPHEADER => $authHeaders,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 5,
+        ]);
+        $prefsJson = curl_exec($ch);
+        $prefsCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($prefsCode !== 200 || !$prefsJson) {
+            throw new Exception("Prefs query HTTP {$prefsCode}");
+        }
+
+        $prefs = json_decode($prefsJson, true);
+
+        // Also include users who have NO preferences row (default is opted-in)
+        $optedOutIds = [];
+        $prefsUrl2 = $supabaseUrl . '/rest/v1/notification_preferences?notify_new_quote=eq.false&user_id=in.' . $idsParam . '&select=user_id';
+        $ch = curl_init($prefsUrl2);
+        curl_setopt_array($ch, [
+            CURLOPT_HTTPHEADER => $authHeaders,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 5,
+        ]);
+        $optedOutJson = curl_exec($ch);
+        curl_close($ch);
+        if ($optedOutJson) {
+            $optedOut = json_decode($optedOutJson, true);
+            if (is_array($optedOut)) {
+                $optedOutIds = array_column($optedOut, 'user_id');
+            }
+        }
+
+        // Final list: all user IDs minus those explicitly opted out
+        $notifyIds = array_diff($userIds, $optedOutIds);
+
+        if (empty($notifyIds)) {
+            throw new Exception('No users opted in for new-quote notifications');
+        }
+
+        // 3 & 4. For each opted-in user: get email via Auth Admin API, then send notification
+        $messagePreview = mb_substr(strip_tags($description), 0, 200);
+        if (mb_strlen(strip_tags($description)) > 200) {
+            $messagePreview .= '...';
+        }
+
+        $fullName = "$firstName $lastName";
+
+        foreach ($notifyIds as $userId) {
+            try {
+                $authUrl = $supabaseUrl . '/auth/v1/admin/users/' . $userId;
+                $ch = curl_init($authUrl);
+                curl_setopt_array($ch, [
+                    CURLOPT_HTTPHEADER => $authHeaders,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_TIMEOUT => 5,
+                ]);
+                $authJson = curl_exec($ch);
+                $authCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($authCode !== 200 || !$authJson) {
+                    error_log("[Dream Closets] Auth API error for user {$userId}: HTTP {$authCode}", 3, __DIR__ . '/quote-requests.log');
+                    continue;
+                }
+
+                $authUser = json_decode($authJson, true);
+                $userEmail = $authUser['email'] ?? '';
+                if (!$userEmail) {
+                    continue;
+                }
+
+                // Skip if this is the same as the business admin email
+                if ($userEmail === $smtpConfig['to_email']) {
+                    continue;
+                }
+
+                $userName = $nameMap[$userId] ?? 'there';
+
+                $notifSubject = "New Consultation Request — {$fullName}";
+
+                $notifHtml = "
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #1a1a2e 0%, #2c2c44 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header h1 { margin: 0; font-size: 24px; color: #c9a96e; }
+        .content { background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0; }
+        .field { margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
+        .field:last-child { border-bottom: none; margin-bottom: 0; }
+        .label { font-weight: bold; color: #1a1a2e; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .value { font-size: 15px; color: #1e293b; }
+        .message-box { background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 8px; font-size: 14px; color: #475569; }
+        .cta { text-align: center; margin: 25px 0 10px 0; }
+        .cta a { background: #c9a96e; color: #1a1a2e; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; }
+        .footer { background: #1a1a2e; color: #94a3b8; padding: 20px; text-align: center; font-size: 12px; border-radius: 0 0 8px 8px; }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>New Consultation Request</h1>
+            <p style='margin: 10px 0 0 0; opacity: 0.9;'>IPW Dashboard</p>
+        </div>
+        <div class='content'>
+            <p style='font-size: 16px; margin-top: 0;'>Hi {$userName},</p>
+            <p>A new consultation request has been submitted for <strong>Dream Closets</strong>:</p>
+            <div class='field'>
+                <div class='label'>Name</div>
+                <div class='value'>{$fullName}</div>
+            </div>
+            <div class='field'>
+                <div class='label'>Email</div>
+                <div class='value'><a href='mailto:{$email}'>{$email}</a></div>
+            </div>
+            <div class='field'>
+                <div class='label'>Phone</div>
+                <div class='value'>{$phone}</div>
+            </div>
+            <div class='field'>
+                <div class='label'>Service</div>
+                <div class='value'>{$serviceLabel}</div>
+            </div>
+            <div class='field'>
+                <div class='label'>Address</div>
+                <div class='value'>{$address}</div>
+            </div>
+            <div class='field'>
+                <div class='label'>Preferred Date</div>
+                <div class='value'>" . ($preferredDate ?: 'Not specified') . "</div>
+            </div>
+            <div class='field'>
+                <div class='label'>Project Details</div>
+                <div class='message-box'>{$messagePreview}</div>
+            </div>
+            <div class='cta'>
+                <a href='https://aquamarine-peafowl-476925.hostingersite.com/dashboard/'>View in Dashboard</a>
+            </div>
+        </div>
+        <div class='footer'>
+            <p>IPW Dashboard &mdash; Dream Closets Notification</p>
+            <p>You received this because you have New Quote Alerts enabled.</p>
+        </div>
+    </div>
+</body>
+</html>";
+
+                $notifText = "NEW CONSULTATION REQUEST — IPW DASHBOARD
+==========================================
+
+Hi {$userName},
+
+A new consultation request has been submitted for Dream Closets:
+
+Name: {$fullName}
+Email: {$email}
+Phone: {$phone}
+Service: {$serviceLabel}
+Address: {$address}
+Preferred Date: " . ($preferredDate ?: 'Not specified') . "
+
+Project Details:
+{$messagePreview}
+
+Log in to your dashboard to review and respond.
+
+---
+IPW Dashboard — Dream Closets Notification
+You received this because you have New Quote Alerts enabled.";
+
+                $notifSent = $mailer->send(
+                    $smtpConfig['username'],
+                    'IPW Dashboard',
+                    $userEmail,
+                    $notifSubject,
+                    $notifHtml,
+                    $notifText,
+                    $email,
+                    $fullName
+                );
+
+                if ($notifSent) {
+                    error_log("[Dream Closets] Notification sent to {$userEmail}\n", 3, __DIR__ . '/quote-requests.log');
+                } else {
+                    error_log("[Dream Closets] Notification send failed for {$userEmail}: " . $mailer->getLastError() . "\n", 3, __DIR__ . '/quote-requests.log');
+                }
+
+            } catch (Exception $e) {
+                error_log("[Dream Closets] Notification email failed for user {$userId}: " . $e->getMessage(), 3, __DIR__ . '/quote-requests.log');
+            }
+        }
+
+    } catch (Exception $e) {
+        error_log('[Dream Closets] Dashboard notification failed: ' . $e->getMessage(), 3, __DIR__ . '/quote-requests.log');
+    }
+}
+
 if ($sent) {
     // Send confirmation email to customer
     $customerSubject = "Dream Closets - We Received Your Consultation Request";
