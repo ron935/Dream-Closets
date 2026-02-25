@@ -4,8 +4,8 @@
  * Sends consultation requests via Gmail SMTP
  */
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+error_reporting(0);
+ini_set('display_errors', 0);
 
 header('Content-Type: application/json');
 
@@ -182,24 +182,16 @@ $sent = $mailer->send(
 );
 
 // --- Save quote to Supabase (best-effort, don't block on failure) ---
-$supabaseDebug = [];
 $supabasePath = __DIR__ . '/supabase-config.php';
-$supabaseDebug['path1'] = $supabasePath;
-$supabaseDebug['path1_exists'] = file_exists($supabasePath);
 if (!file_exists($supabasePath)) {
     $supabasePath = __DIR__ . '/../supabase-config.php';
 }
-$supabaseDebug['path_used'] = $supabasePath;
-$supabaseDebug['path_used_exists'] = file_exists($supabasePath);
 if (file_exists($supabasePath)) {
     $supabaseConfig = require $supabasePath;
     array_walk($supabaseConfig, function(&$val) {
         if (is_string($val)) $val = preg_replace('/[^\x20-\x7E]/', '', $val);
     });
 
-    $supabaseDebug['key_length'] = strlen($supabaseConfig['service_role_key']);
-    $supabaseDebug['key_start'] = substr($supabaseConfig['service_role_key'], 0, 20);
-    $supabaseDebug['key_end'] = substr($supabaseConfig['service_role_key'], -20);
     $dreamClosetsBusinessId = '09ae0180-0532-4a0f-ac78-53ad526b97a1';
 
     try {
@@ -231,9 +223,6 @@ if (file_exists($supabasePath)) {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
         curl_close($ch);
-        $supabaseDebug['http_code'] = $httpCode;
-        $supabaseDebug['response'] = $response;
-        $supabaseDebug['curl_error'] = $curlError;
         if ($httpCode !== 201) {
             error_log("[Dream Closets] Supabase insert HTTP {$httpCode}: {$response} {$curlError}", 3, __DIR__ . '/quote-requests.log');
         }
@@ -586,8 +575,7 @@ Custom closets designed for your lifestyle.
 
     echo json_encode([
         'success' => true,
-        'message' => 'Thank you! Your consultation request has been sent. We will contact you within 24 hours. A confirmation has been sent to your email.',
-        '_debug_supabase' => $supabaseDebug ?? 'no supabase block reached'
+        'message' => 'Thank you! Your consultation request has been sent. We will contact you within 24 hours. A confirmation has been sent to your email.'
     ]);
 } else {
     http_response_code(500);
