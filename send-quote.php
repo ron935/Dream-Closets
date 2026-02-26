@@ -39,10 +39,51 @@ if (!file_exists($configPath)) {
 }
 $smtpConfig = require $configPath;
 
+// Supabase config path: same dir on Hostinger, one level up on MAMP
+$supabasePath = __DIR__ . '/supabase-config.php';
+if (!file_exists($supabasePath)) {
+    $supabasePath = __DIR__ . '/../supabase-config.php';
+}
+$supabaseConfig = file_exists($supabasePath) ? require $supabasePath : null;
+
 // Sanitize config values (Hostinger file editor can inject invisible chars)
 array_walk($smtpConfig, function(&$val) {
     if (is_string($val)) $val = preg_replace('/[^\x20-\x7E]/', '', $val);
 });
+if ($supabaseConfig) {
+    array_walk($supabaseConfig, function(&$val) {
+        if (is_string($val)) $val = preg_replace('/[^\x20-\x7E]/', '', $val);
+    });
+}
+
+// Fetch business-specific config from Supabase
+$businessId = '09ae0180-0532-4a0f-ac78-53ad526b97a1';
+$bizResult = null;
+if ($supabaseConfig) {
+    $bizUrl = $supabaseConfig['url'] . '/rest/v1/businesses?id=eq.' . $businessId . '&select=contact_email,name,from_email,turnstile_secret,secondary_email';
+    $bizCh = curl_init($bizUrl);
+    curl_setopt_array($bizCh, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'apikey: ' . $supabaseConfig['service_role_key'],
+            'Authorization: Bearer ' . $supabaseConfig['service_role_key'],
+        ],
+        CURLOPT_TIMEOUT => 5,
+    ]);
+    $bizResult = json_decode(curl_exec($bizCh), true);
+    curl_close($bizCh);
+
+    if (!empty($bizResult[0]['contact_email'])) {
+        $smtpConfig['from_name'] = $bizResult[0]['name'] ?? 'Dream Closets';
+        $smtpConfig['to_email'] = $bizResult[0]['contact_email'];
+    }
+}
+
+// from_email: use business-specific or fall back to shared SMTP relay
+$fromEmail = !empty($bizResult[0]['from_email']) ? $bizResult[0]['from_email'] : $smtpConfig['username'];
+
+// turnstile_secret: use business-specific or null (skip verification if null)
+$turnstileSecret = !empty($bizResult[0]['turnstile_secret']) ? $bizResult[0]['turnstile_secret'] : null;
 
 // Get form data
 $firstName = isset($_POST['firstName']) ? htmlspecialchars(trim($_POST['firstName']), ENT_QUOTES, 'UTF-8') : '';
@@ -171,7 +212,7 @@ $mailer = new SMTPMailer(
 );
 
 $sent = $mailer->send(
-    $smtpConfig['from_email'],
+    $fromEmail,
     $smtpConfig['from_name'],
     $smtpConfig['to_email'],
     $subject,
@@ -182,21 +223,10 @@ $sent = $mailer->send(
 );
 
 // --- Save quote to Supabase (best-effort, don't block on failure) ---
-$supabasePath = __DIR__ . '/supabase-config.php';
-if (!file_exists($supabasePath)) {
-    $supabasePath = __DIR__ . '/../supabase-config.php';
-}
-if (file_exists($supabasePath)) {
-    $supabaseConfig = require $supabasePath;
-    array_walk($supabaseConfig, function(&$val) {
-        if (is_string($val)) $val = preg_replace('/[^\x20-\x7E]/', '', $val);
-    });
-
-    $dreamClosetsBusinessId = '09ae0180-0532-4a0f-ac78-53ad526b97a1';
-
+if ($supabaseConfig) {
     try {
         $quoteData = json_encode([
-            'business_id' => $dreamClosetsBusinessId,
+            'business_id' => $businessId,
             'name' => "$firstName $lastName",
             'email' => $email,
             'phone' => $phone,
@@ -240,7 +270,7 @@ if (file_exists($supabasePath)) {
         ];
 
         // 1. Get users associated with this business + admins
-        $profilesUrl = $supabaseUrl . '/rest/v1/profiles?or=(business_id.eq.' . $dreamClosetsBusinessId . ',role.eq.admin)&select=id,full_name';
+        $profilesUrl = $supabaseUrl . '/rest/v1/profiles?or=(business_id.eq.' . $businessId . ',role.eq.admin)&select=id,full_name';
         $ch = curl_init($profilesUrl);
         curl_setopt_array($ch, [
             CURLOPT_HTTPHEADER => $authHeaders,
@@ -563,13 +593,13 @@ Custom closets designed for your lifestyle.
 ";
 
     $mailer->send(
-        $smtpConfig['from_email'],
+        $fromEmail,
         $smtpConfig['from_name'],
         $email,
         $customerSubject,
         $customerHtmlBody,
         $customerTextBody,
-        $smtpConfig['from_email'],
+        $fromEmail,
         $smtpConfig['from_name']
     );
 
