@@ -3,6 +3,12 @@
  * Handles navigation, animations, forms, and interactivity
  */
 
+// Centralized API base URL
+var _isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+var apiBase = _isLocal
+    ? 'http://localhost:8888/dashboard/api'
+    : 'https://blue-panther-862989.hostingersite.com/api';
+
 document.addEventListener('DOMContentLoaded', function() {
     Navigation.init();
     ScrollEffects.init();
@@ -720,12 +726,36 @@ const ContactForm = {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Sending...';
 
-        const formData = new FormData(this.form);
+        // Collect form data and map fields to centralized API format
+        const rawData = new FormData(this.form);
+        const formData = new FormData();
 
-        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-        const phpUrl = baseUrl + 'send-quote.php';
+        // Map firstName + lastName → name
+        const firstName = (rawData.get('firstName') || '').trim();
+        const lastName = (rawData.get('lastName') || '').trim();
+        formData.append('name', (firstName + ' ' + lastName).trim());
 
-        fetch(phpUrl, {
+        formData.append('business', rawData.get('business') || 'dream-closets');
+        formData.append('email', rawData.get('email') || '');
+        formData.append('phone', rawData.get('phone') || '');
+        formData.append('service', rawData.get('service') || '');
+
+        // Build message from description + extra fields
+        var messageParts = [];
+        var address = (rawData.get('address') || '').trim();
+        if (address) messageParts.push('Address: ' + address);
+        var preferredDate = (rawData.get('preferredDate') || '').trim();
+        if (preferredDate) messageParts.push('Preferred Consultation Date: ' + preferredDate);
+        var description = (rawData.get('description') || '').trim();
+        if (description) messageParts.push(description);
+        formData.append('message', messageParts.join('\n\n'));
+
+        // Pass through Turnstile token if present
+        var turnstileToken = rawData.get('cf-turnstile-response');
+        if (turnstileToken) formData.append('cf-turnstile-response', turnstileToken);
+
+        // Send to centralized API
+        fetch(apiBase + '/submit-quote.php', {
             method: 'POST',
             body: formData
         })

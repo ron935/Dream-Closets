@@ -17,7 +17,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=48c6d5f3">
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 
@@ -59,7 +60,8 @@
                     <h2>Schedule Your Free Consultation</h2>
                     <p>Fill out the form below and one of our design experts will contact you within 24 hours to schedule your free in-home consultation.</p>
 
-                    <form id="consultation-form" class="contact-form" action="send-quote.php" method="POST">
+                    <form id="consultation-form" class="contact-form" method="POST">
+                        <input type="hidden" name="business" value="dream-closets">
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="firstName">First Name *</label>
@@ -111,6 +113,7 @@
                             <input type="date" id="preferredDate" name="preferredDate">
                         </div>
 
+                        <div style="margin-bottom:12px;"><div class="cf-turnstile" data-sitekey="0x4AAAAAACobGIqdWkNiz7FE"></div></div>
                         <button type="submit" class="btn btn-primary btn-lg btn-block">Schedule My Free Consultation</button>
 
                         <p class="form-disclaimer">By submitting this form, you agree to be contacted by Dream Closets regarding your consultation request. We respect your privacy and will never share your information.</p>
@@ -247,6 +250,7 @@
     </footer>
 
     <button class="back-to-top" aria-label="Back to top"><i class="fas fa-chevron-up"></i></button>
-    <script src="js/main.js"></script>
+    <script src="js/main.js?v=af8526ef"></script>
+    <script src="https://blue-panther-862989.hostingersite.com/api/tracker.js" data-business="dream-closets" defer></script>
 </body>
 </html>
