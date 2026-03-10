@@ -754,6 +754,16 @@ const ContactForm = {
         var turnstileToken = rawData.get('cf-turnstile-response');
         if (turnstileToken) formData.append('cf-turnstile-response', turnstileToken);
 
+        // Attach UTM params and referrer for lead source attribution
+        try {
+            var sp = new URLSearchParams(location.search);
+            if (sp.get('utm_source')) formData.append('utm_source', sp.get('utm_source'));
+            if (sp.get('utm_medium')) formData.append('utm_medium', sp.get('utm_medium'));
+            if (sp.get('utm_campaign')) formData.append('utm_campaign', sp.get('utm_campaign'));
+        } catch(e) {}
+        if (document.referrer) formData.append('referrer', document.referrer);
+        formData.append('source', location.href);
+
         // Send to centralized API
         fetch(apiBase + '/submit-quote.php', {
             method: 'POST',
