@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://skyblue-porpoise-169119.hostingersite.com/sitemap.xml
