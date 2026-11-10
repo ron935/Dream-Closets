@@ -735,7 +735,7 @@ const ContactForm = {
         const lastName = (rawData.get('lastName') || '').trim();
         formData.append('name', (firstName + ' ' + lastName).trim());
 
-        formData.append('business', rawData.get('business') || 'dream-closets');
+        formData.append('business', rawData.get('business') || 'dreamclosets');
         formData.append('email', rawData.get('email') || '');
         formData.append('phone', rawData.get('phone') || '');
         formData.append('service', rawData.get('service') || '');
@@ -765,7 +765,7 @@ const ContactForm = {
         formData.append('source', location.href);
 
         // Send to centralized API
-        fetch(apiBase + '/submit-quote.php', {
+        fetch(apiBase + '/submit-quote', {
             method: 'POST',
             body: formData
         })
